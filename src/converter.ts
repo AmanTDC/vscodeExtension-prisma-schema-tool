@@ -1,57 +1,79 @@
 import { TextEncoder, TextDecoder } from "util"
+import * as _ from 'lodash';
 
 let { writeFileSync, readFileSync } = require('fs')
 //location of the schema file you want to adjust
 //let schema = readFileSync('./schema.prisma')
 
 //converts snake-case columns to camel-case
-function toCamelCase(word: string) {
-    let newWord = word.split('_')
-    newWord[1] = newWord[1][0].toUpperCase() + newWord[1].slice(1)
-    return newWord.join("")
+function toPascalCase(input:string) {
+    return _.upperFirst(_.camelCase(input));
 }
-
-//the main function
+function getIthWord(line: string, i: number){
+    return line.split(" ").filter(l=>l!=='')?.[i];
+}
+function getAllIndices(line:string, char:string){
+    var indices = [];
+    for(var i=0; i<line.length;i++) {
+        if (line[i] === char) {
+            indices.push(i);
+        };
+    }
+    return indices;
+}
 function main(input: Uint8Array) {
-    let schema:string = new TextDecoder().decode(input)
-    schema = schema + '\n'
-    let regex = new RegExp(/\w*_\w*/g)
-    let lines = <RegExpMatchArray>schema.match(/.*\n/g)
-    lines.forEach((line: any, i) => {
-        if (/model/.test(line) && regex.test(line)) {
-            let modelName: string
-            if (!line) {
-                modelName = line.match(line.match(regex))[0]
-                lines[i] = line.replace(modelName, toCamelCase(modelName)) + `\t  @@map("${modelName}")\n`
-
+    let schema:string = new TextDecoder().decode(input);
+    schema = schema + '\n';
+    let regex = new RegExp(/\w*_\w*/g);
+    let lines = <RegExpMatchArray>schema.match(/.*\n/g);
+    let blockStart: boolean = false;
+    let isEntityMapped : boolean = false;
+    let blockName: string = '';
+    let blockType: string = '';
+    lines.forEach((line: string, i) => {
+        let newLine: string = line;
+        const first = getIthWord(line,0);
+        const second = getIthWord(line,1);
+        if(/\{/.test(line) && first!=="generator" && first!=="datasource"){ 
+            blockStart = true;
+            blockName = second;
+            blockType = first;
+            newLine = line.replace(blockName, toPascalCase(blockName));
+        }
+        else if (blockStart && !/\@map/.test(line) && !/\@/.test(first) && !/role/.test(blockType)){
+            let entityName = first;
+            newLine = line.replace(entityName, _.camelCase(entityName)).replace(second,toPascalCase(second)).replace('\n',` @map("${entityName}")${'\n'}`);
+        }
+        else if(blockStart && /\@\@map/.test(line)){
+            isEntityMapped = true;
+        }
+        if(blockStart && /\@map/.test(line)){
+            newLine = line.replace('\n',` @map("${blockName}")${'\n'}`);
+        }
+        if(blockStart){
+            let arrays = [];
+            let arrayStarting = getAllIndices(line,'[');
+            let arrayClosing = getAllIndices(line,']');
+            for(let i=0;i<arrayStarting.length;i++){
+                arrays[i] = line.slice(arrayStarting[i],arrayClosing[i]).split(" ").join(",").split(",").map(c=>`${_.camelCase(c)}`).join(",");
+                newLine = newLine.replace(line.slice(arrayStarting[i],arrayClosing[i]),arrays[i]);
             }
         }
-        else {
-            if (regex.test(line)) {
-                let snakeCase = <RegExpMatchArray>line.match(regex)
-                let newLine = ''
-                snakeCase.forEach((item, i) => {
-                    if (i == 0) {
-                        newLine = line.replace(item, toCamelCase(item))
-                    }
-                    else {
-                        newLine = newLine.replace(item, toCamelCase(item))
-                    }
-                })
-                if (line.trim().match(/^\w*_\w*/)) {
-                    newLine = newLine.replace(/\n/, ` @map("${snakeCase[0]}")\n`)
-                }
-
-                lines[i] = newLine
-
+        if(blockStart && /\}/.test(line) ){
+            if(!isEntityMapped){
+                newLine = `  @@map("${blockName}")${'\n'}${line}`;
             }
+            else{
+                newLine = '}';
+            }
+            isEntityMapped = false;
+            blockStart = false;
         }
-    })
-
-    let output = lines.join('')
-    //write back to prisma file
-   
-    return new TextEncoder().encode(output)
+        
+        lines[i] = newLine;
+    });
+    let output = lines.join('\n');
+    return new TextEncoder().encode(output);
 }
 
-export default main
+export default main;
