@@ -1,13 +1,15 @@
-import { TextEncoder, TextDecoder } from "util"
-import * as _ from 'lodash';
+import { TextEncoder, TextDecoder } from "util";
 
-let { writeFileSync, readFileSync } = require('fs')
-//location of the schema file you want to adjust
-//let schema = readFileSync('./schema.prisma')
 
-//converts snake-case columns to camel-case
-function toPascalCase(input:string) {
-    return _.upperFirst(_.camelCase(input));
+function toCamelCase(input: String) {
+    const pascal =  toPascalCase(input);
+    return input?.charAt(0)?.toLowerCase()+pascal?.slice(1);
+}
+function toPascalCase(str:String) {
+    if (!str)
+        return '';
+    return str.split("_").map((w)=>w.charAt(0).toUpperCase()+w.slice(1)).join('');
+    
 }
 function getIthWord(line: string, i: number){
     return line.split(" ").filter(l=>l!=='')?.[i];
@@ -40,14 +42,15 @@ function main(input: Uint8Array) {
             blockType = first;
             newLine = line.replace(blockName, toPascalCase(blockName));
         }
-        else if (blockStart && !/\@map/.test(line) && !/\@/.test(first) && !/role/.test(blockType)){
-            let entityName = first;
-            newLine = line.replace(entityName, _.camelCase(entityName)).replace(second,toPascalCase(second)).replace('\n',` @map("${entityName}")${'\n'}`);
-        }
         else if(blockStart && /\@\@map/.test(line)){
             isEntityMapped = true;
         }
-        if(blockStart && /\@map/.test(line)){
+        else if (blockStart && !/\@map/.test(line) && !/\@/.test(first) && !/enum/.test(blockType) && line.trim()!=='') {
+            let entityName = first;
+            if(first)
+                newLine = line.replace(entityName, toCamelCase(entityName)).replace(second,toPascalCase(second)).replace('\n',` @map("${entityName}")${'\n'}`);
+        }
+        else if(blockStart && /\@map/.test(line)){
             newLine = line.replace('\n',` @map("${blockName}")${'\n'}`);
         }
         if(blockStart){
@@ -55,8 +58,8 @@ function main(input: Uint8Array) {
             let arrayStarting = getAllIndices(line,'[');
             let arrayClosing = getAllIndices(line,']');
             for(let i=0;i<arrayStarting.length;i++){
-                arrays[i] = line.slice(arrayStarting[i],arrayClosing[i]).split(" ").join(",").split(",").map(c=>`${_.camelCase(c)}`).join(",");
-                newLine = newLine.replace(line.slice(arrayStarting[i],arrayClosing[i]),arrays[i]);
+                arrays[i] = line.slice(arrayStarting[i+1],arrayClosing[i]).split(" ").join(",").split(",").map(c=>`${toCamelCase(c)}`).join(",");
+                newLine = newLine.replace(line.slice(arrayStarting[i+1],arrayClosing[i]),arrays[i]);
             }
         }
         if(blockStart && /\}/.test(line) ){

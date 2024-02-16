@@ -1,13 +1,13 @@
 {
-	"name": "prisma-schema-tool",
-	"displayName": "Prisma-Schema-Tool(snakeCase to camelCase)",
+	"name": "prisma-schema-tool-aman",
+	"displayName": "Prisma Schema Snake To Camel Aman",
 	"description": "This extension was designed to convert snake-case models or fields in your prisma schema to camael-case",
 	"publisher": "Samson",
 	"icon": "icon.png",
 	"repository": {
-		"url": "https://github.com/sammychinedu2ky/vscodeExtension-prisma-schema-tool.git"
+		"url": "https://github.com/amantdc/vscodeExtension-prisma-schema-tool.git"
 	},
-	"version": "1.2.0",
+	"version": "1.0.0",
 	"engines": {
 		"vscode": "^1.46.0"
 	},
@@ -60,7 +60,6 @@
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
-		"@types/lodash": "^4.14.202",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^13.11.0",
 		"@types/vscode": "^1.46.0",
@@ -68,7 +67,6 @@
 		"@typescript-eslint/parser": "^2.30.0",
 		"eslint": "^6.8.0",
 		"glob": "^7.1.6",
-		"lodash": "^4.17.21",
 		"mocha": "^7.1.2",
 		"ts-node": "^10.9.2",
 		"typescript": "^3.8.3",
