@@ -1,8 +1,8 @@
 {
-	"name": "prisma-schema-tool-aman",
-	"displayName": "Prisma Schema Snake To Camel Aman",
-	"description": "This extension was designed to convert snake-case models or fields in your prisma schema to camael-case",
-	"publisher": "Samson",
+	"name": "prisma-snake-to-camel",
+	"displayName": "Prisma Snake To Camel",
+	"description": "A simple extension to convert snake case to camel case in your prisma schema without breaking db.",
+	"publisher": "Aman Gupta",
 	"icon": "icon.png",
 	"repository": {
 		"url": "https://github.com/amantdc/vscodeExtension-prisma-schema-tool.git"
